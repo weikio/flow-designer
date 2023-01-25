@@ -81,7 +81,7 @@ export class ComponentsPage extends React.Component<Props, State> {
                     <Flex className="tools" justifyContent={{default: 'justifyContentSpaceBetween'}}>
                         <FlexItem>
                             <TextContent className="header">
-                                <Text component="h2">Component Catalog</Text>
+                                <Text component="h2">Adanced Component Catalog</Text>
                                 <Badge isRead className="labels">{components.length}</Badge>
                             </TextContent>
                         </FlexItem>

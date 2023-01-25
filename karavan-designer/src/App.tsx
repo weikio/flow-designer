@@ -94,12 +94,22 @@ class App extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        Promise.all([
+        const yamlFileName = localStorage.getItem("yamlFileName");
+        const integrationName = localStorage.getItem("integrationName") ?? "example";
+
+        const promises = [
             fetch("kamelets/kamelets.yaml"),
             fetch("components/components.json"),
             fetch("snippets/org.apache.camel.AggregationStrategy"),
             fetch("snippets/org.apache.camel.Processor")
-        ]).then(responses =>
+        ];
+
+        if (yamlFileName != "")
+        {
+            promises.push(fetch("routes/" + yamlFileName));
+        }
+
+        Promise.all(promises).then(responses =>
             Promise.all(responses.map(response => response.text()))
         ).then(data => {
             const kamelets: string[] = [];
@@ -113,10 +123,25 @@ class App extends React.Component<Props, State> {
             ComponentApi.saveComponents(jsons, true);
 
             this.toast("Success", "Loaded " + jsons.length + " components", 'success');
-            this.setState({loaded: true});
 
             TemplateApi.saveTemplate("org.apache.camel.AggregationStrategy", data[2]);
             TemplateApi.saveTemplate("org.apache.camel.Processor", data[3]);
+
+            if (data[4] != null)
+            {
+                console.log("not fresh");
+                this.save(integrationName, data[4], false);
+            }
+            else
+            {
+                console.log("fresh");
+            }
+
+            this.toast("Success YAML Loaded", data[4], 'success');
+            this.setState({loaded: true});
+        })
+        .then(() => {
+            console.log("loaded");
         }).catch(err =>
             this.toast("Error", err.text, 'danger')
         );
@@ -124,7 +149,7 @@ class App extends React.Component<Props, State> {
 
     save(filename: string, yaml: string, propertyOnly: boolean) {
         this.setState({name: filename, yaml: yaml});
-        // console.log(yaml);
+        console.log(yaml);
     }
 
     getSpinner() {
@@ -139,9 +164,8 @@ class App extends React.Component<Props, State> {
         const {pageId} = this.state;
         const pages: MenuItem[] = [
             new MenuItem("designer", "Designer", <BlueprintIcon/>),
-            new MenuItem("eip", "Enterprise Integration Patterns", <EipIcon/>),
-            new MenuItem("kamelets", "Kamelets", <KameletsIcon/>),
-            new MenuItem("components", "Components", <ComponentsIcon/>),
+            new MenuItem("kamelets", "Basic", <KameletsIcon/>),
+            new MenuItem("components", "Advanced", <ComponentsIcon/>),
         ]
         return (<Flex className="nav-buttons" direction={{default: "column"}} style={{height: "100%"}}
                       spaceItems={{default: "spaceItemsNone"}}>

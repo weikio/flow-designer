@@ -83,7 +83,7 @@ export class KameletsPage extends React.Component<Props, State> {
                     <Flex className="tools" justifyContent={{default: 'justifyContentSpaceBetween'}}>
                         <FlexItem>
                             <TextContent className="header">
-                                <Text component="h2">Kamelet Catalog</Text>
+                                <Text component="h2">Basic Component Catalog</Text>
                                 <Badge isRead className="labels">{kamelets.length}</Badge>
                             </TextContent>
                         </FlexItem>

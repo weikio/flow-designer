@@ -133,13 +133,13 @@ export class DesignerPage extends React.Component<Props, State> {
                                             </Button>
                                         </Tooltip>
                                     </ToolbarItem>
-                                    <ToolbarItem>
+                                    {/* <ToolbarItem>
                                         <Tooltip content="Download image" position={"bottom"}>
                                             <Button variant="secondary" icon={<DownloadImageIcon/>} onClick={e => this.downloadImage()}>
                                                 Image
                                             </Button>
                                         </Tooltip>
-                                    </ToolbarItem>
+                                    </ToolbarItem> */}
                                 </ToolbarContent>
                             </Toolbar>
                         </FlexItem>
