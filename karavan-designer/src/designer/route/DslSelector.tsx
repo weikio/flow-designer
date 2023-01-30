@@ -22,9 +22,9 @@ import {
     Text, TextInput,
 } from '@patternfly/react-core';
 import '../karavan.css';
-import {CamelUi} from "../utils/CamelUi";
-import {DslMetaModel} from "../utils/DslMetaModel";
-import {CamelUtil} from "karavan-core/lib/api/CamelUtil";
+import { CamelUi } from "../utils/CamelUi";
+import { DslMetaModel } from "../utils/DslMetaModel";
+import { CamelUtil } from "karavan-core/lib/api/CamelUtil";
 
 interface Props {
     onDslSelect: (dsl: DslMetaModel, parentId: string, position?: number | undefined) => void,
@@ -57,18 +57,29 @@ export class DslSelector extends React.Component<Props, State> {
     }
 
     selectTab = (evt: React.MouseEvent<HTMLElement, MouseEvent>, eventKey: string | number) => {
-        this.setState({tabIndex: eventKey})
+        this.setState({ tabIndex: eventKey })
     }
 
     componentDidUpdate = (prevProps: Readonly<Props>, prevState: Readonly<State>, snapshot?: any) => {
         if (prevProps.parentDsl !== this.props.parentDsl) {
-            this.setState({tabIndex: CamelUi.getSelectorModelTypes(this.props.parentDsl, this.props.showSteps)[0][0]});
+            this.setState({ tabIndex: CamelUi.getSelectorModelTypes(this.props.parentDsl, this.props.showSteps)[0][0] });
         }
     }
 
     selectDsl = (evt: React.MouseEvent, dsl: any) => {
         evt.stopPropagation();
-        this.setState({filter:""});
+        this.setState({ filter: "" });
+
+        if (dsl.navigation == "coresystem"){ 
+            if (dsl.properties){
+                const parameters: any = {  };
+                for (let [key, value] of dsl.properties){
+                    parameters[key] = value;
+                }
+                dsl.parameters = parameters;
+            }
+        }
+
         this.props.onDslSelect.call(this, dsl, this.props.parentId, this.props.position);
     }
 
@@ -77,8 +88,8 @@ export class DslSelector extends React.Component<Props, State> {
             <Form isHorizontal className="search" autoComplete="off">
                 <FormGroup fieldId="search">
                     <TextInput className="text-field" type="text" id="search" name="search" iconVariant='search'
-                               value={this.state.filter}
-                               onChange={e => this.setState({filter: e})}/>
+                        value={this.state.filter}
+                        onChange={e => this.setState({ filter: e })} />
                 </FormGroup>
             </Form>
         )
@@ -87,7 +98,7 @@ export class DslSelector extends React.Component<Props, State> {
     getCard(dsl: DslMetaModel, index: number) {
         return (
             <Card key={dsl.dsl + index} isHoverable isCompact className="dsl-card"
-                  onClick={event => this.selectDsl(event, dsl)}>
+                onClick={event => this.selectDsl(event, dsl)}>
                 <CardHeader>
                     {CamelUi.getIconForDsl(dsl)}
                     <Text>{dsl.title}</Text>
@@ -98,14 +109,14 @@ export class DslSelector extends React.Component<Props, State> {
                 </CardBody>
                 <CardFooter>
                     {dsl.navigation.toLowerCase() === "kamelet"
-                        && <div className="footer" style={{justifyContent: "space-between"}}>
+                        && <div className="footer" style={{ justifyContent: "space-between" }}>
                             <Badge isRead className="labels">{dsl.labels}</Badge>
                             <Badge isRead className="version">{dsl.version}</Badge>
                         </div>}
                     {dsl.navigation.toLowerCase() === "component"
-                        && <div className="footer" style={{justifyContent: "flex-start"}}>
-                            {dsl.labels.split(',').map((s: string,  i: number) => <Badge key={s + i} isRead
-                                                                                         className="labels">{s}</Badge>)}
+                        && <div className="footer" style={{ justifyContent: "flex-start" }}>
+                            {dsl.labels.split(',').map((s: string, i: number) => <Badge key={s + i} isRead
+                                className="labels">{s}</Badge>)}
                             <Badge isRead className="version">{dsl.version}</Badge>
                         </div>
                     }
@@ -115,7 +126,7 @@ export class DslSelector extends React.Component<Props, State> {
     }
 
     close = () => {
-        this.setState({filter:""});
+        this.setState({ filter: "" });
         this.props.onClose?.call(this);
     }
 
@@ -131,21 +142,21 @@ export class DslSelector extends React.Component<Props, State> {
                 isOpen={this.props.isOpen}
                 onClose={() => this.close()}
                 header={
-                    <Flex direction={{default: "column"}}>
+                    <Flex direction={{ default: "column" }}>
                         <FlexItem>
                             <h3>{title}</h3>
                             {this.searchInput()}
                         </FlexItem>
                         <FlexItem>
-                            <Tabs style={{overflow: 'hidden'}} activeKey={this.state.tabIndex}
-                                  onSelect={this.selectTab}>
-                                {CamelUi.getSelectorModelTypes(parentDsl, this.props.showSteps,this.state.filter).map((label: [string, number], index: number) => {
+                            <Tabs style={{ overflow: 'hidden' }} activeKey={this.state.tabIndex}
+                                onSelect={this.selectTab}>
+                                {CamelUi.getSelectorModelTypes(parentDsl, this.props.showSteps, this.state.filter).map((label: [string, number], index: number) => {
                                     const labelText = label[0];
                                     const count = label[1];
                                     const title = ['kamelet', 'component'].includes(labelText.toLowerCase()) ? labelText + "s (" + count + ")" : labelText;
                                     return (
                                         <Tab eventKey={labelText} key={"tab-" + labelText}
-                                             title={<TabTitleText>{CamelUtil.capitalizeName(title)}</TabTitleText>}>
+                                            title={<TabTitleText>{CamelUtil.capitalizeName(title)}</TabTitleText>}>
                                         </Tab>
                                     )
                                 })}

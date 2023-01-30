@@ -16,19 +16,19 @@
  */
 import React from 'react';
 import '../karavan.css';
-import {DslMetaModel} from "../utils/DslMetaModel";
-import {CamelUtil} from "karavan-core/lib/api/CamelUtil";
-import {FromDefinition, RouteConfigurationDefinition, RouteDefinition} from "karavan-core/lib/model/CamelDefinition";
-import {CamelElement, Integration} from "karavan-core/lib/model/IntegrationDefinition";
-import {CamelDefinitionApiExt} from "karavan-core/lib/api/CamelDefinitionApiExt";
-import {CamelDefinitionApi} from "karavan-core/lib/api/CamelDefinitionApi";
-import {Command, EventBus} from "../utils/EventBus";
-import {RouteToCreate} from "../utils/CamelUi";
-import {CamelDisplayUtil} from "karavan-core/lib/api/CamelDisplayUtil";
-import {toPng} from 'html-to-image';
-import {RouteDesigner, RouteDesignerState} from "./RouteDesigner";
-import {findDOMNode} from "react-dom";
-import {Subscription} from "rxjs";
+import { DslMetaModel } from "../utils/DslMetaModel";
+import { CamelUtil } from "karavan-core/lib/api/CamelUtil";
+import { FromDefinition, RouteConfigurationDefinition, RouteDefinition } from "karavan-core/lib/model/CamelDefinition";
+import { CamelElement, Integration } from "karavan-core/lib/model/IntegrationDefinition";
+import { CamelDefinitionApiExt } from "karavan-core/lib/api/CamelDefinitionApiExt";
+import { CamelDefinitionApi } from "karavan-core/lib/api/CamelDefinitionApi";
+import { Command, EventBus } from "../utils/EventBus";
+import { RouteToCreate } from "../utils/CamelUi";
+import { CamelDisplayUtil } from "karavan-core/lib/api/CamelDisplayUtil";
+import { toPng } from 'html-to-image';
+import { RouteDesigner, RouteDesignerState } from "./RouteDesigner";
+import { findDOMNode } from "react-dom";
+import { Subscription } from "rxjs";
 
 export class RouteDesignerLogic {
 
@@ -48,11 +48,11 @@ export class RouteDesignerLogic {
             const el = mutations[0].target;
             const w = el.clientWidth;
             const isChange = mutations.map((m: any) => `${m.oldValue}`).some((prev: any) => prev.indexOf(`width: ${w}px`) === -1);
-            if (isChange) this.routeDesigner.setState({key: Math.random().toString()});
+            if (isChange) this.routeDesigner.setState({ key: Math.random().toString() });
         }
         if (element) {
             const observer = new MutationObserver(checkResize);
-            observer.observe(element, {attributes: true, attributeOldValue: true, attributeFilter: ['style']});
+            observer.observe(element, { attributes: true, attributeOldValue: true, attributeFilter: ['style'] });
         }
         this.commandSub = EventBus.onCommand()?.subscribe((command: Command) => this.onCommand(command));
     }
@@ -65,12 +65,12 @@ export class RouteDesignerLogic {
     }
 
     handleResize = (event: any) => {
-        this.routeDesigner.setState({key: Math.random().toString()});
+        this.routeDesigner.setState({ key: Math.random().toString() });
     }
 
     handleKeyDown = (event: KeyboardEvent) => {
         if ((event.shiftKey)) {
-            this.routeDesigner.setState({shiftKeyPressed: true});
+            this.routeDesigner.setState({ shiftKeyPressed: true });
         }
         if (window.document.hasFocus() && window.document.activeElement) {
             if (['BODY', 'MAIN'].includes(window.document.activeElement.tagName)) {
@@ -89,7 +89,7 @@ export class RouteDesignerLogic {
     }
 
     handleKeyUp = (event: KeyboardEvent) => {
-        this.routeDesigner.setState({shiftKeyPressed: false});
+        this.routeDesigner.setState({ shiftKeyPressed: false });
         if (event.repeat) {
             window.dispatchEvent(event);
         }
@@ -102,7 +102,7 @@ export class RouteDesignerLogic {
     }
 
     copyToClipboard = (): void => {
-        const {integration, selectedUuids} = this.routeDesigner.state;
+        const { integration, selectedUuids } = this.routeDesigner.state;
         const steps: CamelElement[] = []
         selectedUuids.forEach(selectedUuid => {
             const selectedElement = CamelDefinitionApiExt.findElementInIntegration(integration, selectedUuid);
@@ -110,7 +110,7 @@ export class RouteDesignerLogic {
                 steps.push(selectedElement);
             }
         })
-        if (steps.length >0) {
+        if (steps.length > 0) {
             this.routeDesigner.setState(prevState => ({
                 key: Math.random().toString(),
                 clipboardSteps: [...steps]
@@ -118,10 +118,10 @@ export class RouteDesignerLogic {
         }
     }
     pasteFromClipboard = (): void => {
-        const {integration, selectedUuids, clipboardSteps} = this.routeDesigner.state;
+        const { integration, selectedUuids, clipboardSteps } = this.routeDesigner.state;
         if (clipboardSteps.length === 1 && clipboardSteps[0]?.dslName === 'FromDefinition') {
             const clone = CamelUtil.cloneStep(clipboardSteps[0], true);
-            const route = CamelDefinitionApi.createRouteDefinition({from: clone});
+            const route = CamelDefinitionApi.createRouteDefinition({ from: clone });
             this.addStep(route, '', 0)
         } else if (clipboardSteps.length === 1 && clipboardSteps[0]?.dslName === 'RouteDefinition') {
             const clone = CamelUtil.cloneStep(clipboardSteps[0], true);
@@ -138,7 +138,7 @@ export class RouteDesignerLogic {
     }
 
     onCommand = (command: Command) => {
-        switch (command.command){
+        switch (command.command) {
             case "downloadImage": this.integrationImageDownload()
         }
     }
@@ -146,8 +146,8 @@ export class RouteDesignerLogic {
     onPropertyUpdate = (element: CamelElement, newRoute?: RouteToCreate) => {
         if (newRoute) {
             let i = CamelDefinitionApiExt.updateIntegrationRouteElement(this.routeDesigner.state.integration, element);
-            const f = CamelDefinitionApi.createFromDefinition({uri: newRoute.componentName + ":" + newRoute.name})
-            const r = CamelDefinitionApi.createRouteDefinition({from: f, id: newRoute.name})
+            const f = CamelDefinitionApi.createFromDefinition({ uri: newRoute.componentName + ":" + newRoute.name })
+            const r = CamelDefinitionApi.createRouteDefinition({ from: f, id: newRoute.name })
             i = CamelDefinitionApiExt.addStepToIntegration(i, r, '');
             const clone = CamelUtil.cloneIntegration(i);
             this.routeDesigner.setState(prevState => ({
@@ -161,7 +161,7 @@ export class RouteDesignerLogic {
         } else {
             const clone = CamelUtil.cloneIntegration(this.routeDesigner.state.integration);
             const i = CamelDefinitionApiExt.updateIntegrationRouteElement(clone, element);
-            this.routeDesigner.setState({integration: i, propertyOnly: true, key: Math.random().toString()});
+            this.routeDesigner.setState({ integration: i, propertyOnly: true, key: Math.random().toString() });
         }
     }
 
@@ -219,7 +219,7 @@ export class RouteDesignerLogic {
     }
 
     selectElement = (element: CamelElement) => {
-        const {shiftKeyPressed, selectedUuids, integration} = this.routeDesigner.state;
+        const { shiftKeyPressed, selectedUuids, integration } = this.routeDesigner.state;
         let canNotAdd: boolean = false;
         if (shiftKeyPressed) {
             const hasFrom = selectedUuids.map(e => CamelDefinitionApiExt.findElementInIntegration(integration, e)?.dslName === 'FromDefinition').filter(r => r).length > 0;
@@ -272,25 +272,42 @@ export class RouteDesignerLogic {
     }
 
     closeDslSelector = () => {
-        this.routeDesigner.setState({showSelector: false})
+        this.routeDesigner.setState({ showSelector: false })
     }
 
     onDslSelect = (dsl: DslMetaModel, parentId: string, position?: number | undefined) => {
         switch (dsl.dsl) {
-            case 'FromDefinition' :
-                const route = CamelDefinitionApi.createRouteDefinition({from: new FromDefinition({uri: dsl.uri})});
+            case 'FromDefinition':
+                const route = CamelDefinitionApi.createRouteDefinition({ from: new FromDefinition({ uri: dsl.uri }) });
                 this.addStep(route, parentId, position)
                 break;
-            case 'ToDefinition' :
-                const to = CamelDefinitionApi.createStep(dsl.dsl, {uri: dsl.uri});
-                this.addStep(to, parentId, position)
+            case 'ToDefinition':
+                const to = CamelDefinitionApi.createStep(dsl.dsl, { uri: dsl.uri });
+
+                let newStep = to;
+
+                if (dsl.navigation == "coresystem") {
+                    const parametersFromDsl: any = { ...(dsl as any).parameters };
+                    if (parametersFromDsl) {
+                        const clone = (CamelUtil.cloneStep(to));
+                        (clone as any).parameters = parametersFromDsl;
+    
+                        newStep = clone;
+                    }
+    
+                    if (dsl.description){
+                        (newStep as any).description = dsl.description;
+                    }
+                }
+
+                this.addStep(newStep, parentId, position);
                 break;
-            case 'ToDynamicDefinition' :
-                const toD = CamelDefinitionApi.createStep(dsl.dsl, {uri: dsl.uri});
+            case 'ToDynamicDefinition':
+                const toD = CamelDefinitionApi.createStep(dsl.dsl, { uri: dsl.uri });
                 this.addStep(toD, parentId, position)
                 break;
-            case 'KameletDefinition' :
-                const kamelet = CamelDefinitionApi.createStep(dsl.dsl, {name: dsl.name});
+            case 'KameletDefinition':
+                const kamelet = CamelDefinitionApi.createStep(dsl.dsl, { name: dsl.name });
                 this.addStep(kamelet, parentId, position)
                 break;
             default:
@@ -328,7 +345,7 @@ export class RouteDesignerLogic {
     }
 
     onIntegrationUpdate = (i: Integration) => {
-        this.routeDesigner.setState({integration: i, propertyOnly: false, showSelector: false, key: Math.random().toString()});
+        this.routeDesigner.setState({ integration: i, propertyOnly: false, showSelector: false, key: Math.random().toString() });
     }
 
     moveElement = (source: string, target: string, asChild: boolean) => {
@@ -348,7 +365,7 @@ export class RouteDesignerLogic {
     onResizePage(el: HTMLDivElement | null) {
         const rect = el?.getBoundingClientRect();
         if (el && rect && (el.scrollWidth !== this.routeDesigner.state.width || el.scrollHeight !== this.routeDesigner.state.height || rect.top !== this.routeDesigner.state.top || rect.left !== this.routeDesigner.state.left)) {
-            this.routeDesigner.setState({width: el.scrollWidth, height: el.scrollHeight, top: rect.top, left: rect.left})
+            this.routeDesigner.setState({ width: el.scrollWidth, height: el.scrollHeight, top: rect.top, left: rect.left })
         }
     }
 
@@ -371,11 +388,11 @@ export class RouteDesignerLogic {
             return
         }
         toPng(this.routeDesigner.state.printerRef.current, {
-            style: {overflow: 'hidden'}, cacheBust: true, filter: this.integrationImageDownloadFilter,
+            style: { overflow: 'hidden' }, cacheBust: true, filter: this.integrationImageDownloadFilter,
             height: this.routeDesigner.state.height, width: this.routeDesigner.state.width, backgroundColor: this.routeDesigner.props.dark ? "black" : "white"
         }).then(v => {
             toPng(this.routeDesigner.state.printerRef.current, {
-                style: {overflow: 'hidden'}, cacheBust: true, filter: this.integrationImageDownloadFilter,
+                style: { overflow: 'hidden' }, cacheBust: true, filter: this.integrationImageDownloadFilter,
                 height: this.routeDesigner.state.height, width: this.routeDesigner.state.width, backgroundColor: this.routeDesigner.props.dark ? "black" : "white"
             }).then(this.downloadIntegrationImage);
         })

@@ -109,6 +109,8 @@ class App extends React.Component<Props, State> {
             promises.push(fetch("routes/" + yamlFileName));
         }
 
+        promises.push(fetch("components/coresystems.json"));
+
         Promise.all(promises).then(responses =>
             Promise.all(responses.map(response => response.text()))
         ).then(data => {
@@ -136,6 +138,11 @@ class App extends React.Component<Props, State> {
             {
                 console.log("fresh");
             }
+
+            const coresystems: [] = JSON.parse(data[5]);
+            const corejsons: string[] = [];
+            coresystems.forEach(c => corejsons.push(JSON.stringify(c)));
+            ComponentApi.saveComponents(corejsons, false);
 
             this.toast("Success YAML Loaded", data[4], 'success');
             this.setState({loaded: true});

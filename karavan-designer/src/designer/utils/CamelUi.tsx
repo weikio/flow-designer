@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {KameletApi} from "karavan-core/lib/api/KameletApi";
-import {KameletModel} from "karavan-core/lib/model/KameletModels";
-import {DslMetaModel} from "./DslMetaModel";
-import {ComponentApi} from "karavan-core/lib/api/ComponentApi";
-import {CamelMetadataApi} from "karavan-core/lib/model/CamelMetadata";
-import {CamelUtil} from "karavan-core/lib/api/CamelUtil";
-import {CamelDefinitionApiExt} from "karavan-core/lib/api/CamelDefinitionApiExt";
+import { KameletApi } from "karavan-core/lib/api/KameletApi";
+import { KameletModel } from "karavan-core/lib/model/KameletModels";
+import { DslMetaModel } from "./DslMetaModel";
+import { ComponentApi } from "karavan-core/lib/api/ComponentApi";
+import { CamelMetadataApi } from "karavan-core/lib/model/CamelMetadata";
+import { CamelUtil } from "karavan-core/lib/api/CamelUtil";
+import { CamelDefinitionApiExt } from "karavan-core/lib/api/CamelDefinitionApiExt";
 import {
     InterceptSendToEndpointDefinition,
     NamedBeanDefinition,
@@ -29,8 +29,8 @@ import {
     SagaDefinition,
     ToDefinition
 } from "karavan-core/lib/model/CamelDefinition";
-import {CamelElement, Integration} from "karavan-core/lib/model/IntegrationDefinition";
-import {AggregateIcon, ChoiceIcon, FilterIcon, Intercept, InterceptFrom, InterceptSendToEndpoint, OnCompletion, SagaIcon, SortIcon, SplitIcon} from "./KaravanIcons";
+import { CamelElement, Integration } from "karavan-core/lib/model/IntegrationDefinition";
+import { AggregateIcon, ChoiceIcon, FilterIcon, Intercept, InterceptFrom, InterceptSendToEndpoint, OnCompletion, SagaIcon, SortIcon, SplitIcon } from "./KaravanIcons";
 import React from "react";
 
 const StepElements: string[] = [
@@ -100,18 +100,18 @@ export class RouteToCreate {
 
 export class CamelUi {
 
-    static getSelectorModelTypes = (parentDsl: string | undefined, showSteps: boolean = true, filter:string|undefined = undefined): [string, number][] => {
-        const navs =  CamelUi.getSelectorModelsForParent(parentDsl, showSteps).map(dsl => dsl.navigation.split(","))
+    static getSelectorModelTypes = (parentDsl: string | undefined, showSteps: boolean = true, filter: string | undefined = undefined): [string, number][] => {
+        const navs = CamelUi.getSelectorModelsForParent(parentDsl, showSteps).map(dsl => dsl.navigation.split(","))
             .reduce((accumulator, value) => accumulator.concat(value), [])
             .filter((nav, i, arr) => arr.findIndex(l => l === nav) === i)
-            .filter((nav, i, arr) => ![ 'dataformat'].includes(nav));
-        const connectorNavs = ['routing', "transformation", "error", "configuration", "endpoint", "kamelet", "component"];
+            .filter((nav, i, arr) => !['dataformat'].includes(nav));
+        const connectorNavs = ["coresystem", "kamelet", "component", 'routing', "transformation", "error", "configuration", "endpoint"];
         const eipLabels = connectorNavs.filter(n => navs.includes(n));
         return eipLabels.map(label => [label, this.getSelectorModelsForParentFiltered(parentDsl, label, true)
             .filter((dsl: DslMetaModel) => filter === undefined ? true : CamelUi.checkFilter(dsl, filter)).length]);
     }
 
-    static checkFilter = (dsl: DslMetaModel, filter:string|undefined = undefined): boolean => {
+    static checkFilter = (dsl: DslMetaModel, filter: string | undefined = undefined): boolean => {
         if (filter !== undefined && filter !== "") {
             return dsl.title.toLowerCase().includes(filter.toLowerCase())
                 || dsl.description.toLowerCase().includes(filter.toLowerCase());
@@ -129,15 +129,16 @@ export class CamelUi {
         return ['GetDefinition', 'PostDefinition', 'PutDefinition', 'PatchDefinition', 'DeleteDefinition', 'HeadDefinition'].map(method => this.getDslMetaModel(method));
     }
 
-    static getSelectorModelsForParentFiltered = (parentDsl: string | undefined, navigation: string,  showSteps: boolean = true): DslMetaModel[] => {
+    static getSelectorModelsForParentFiltered = (parentDsl: string | undefined, navigation: string, showSteps: boolean = true): DslMetaModel[] => {
         return CamelUi.getSelectorModelsForParent(parentDsl, showSteps)
             .filter(dsl => dsl.navigation.includes(navigation));
-            
-        }
+
+    }
     static getSelectorModelsForParent = (parentDsl: string | undefined, showSteps: boolean = true): DslMetaModel[] => {
         const result: DslMetaModel[] = [];
-        if (!parentDsl){
+        if (!parentDsl) {
             result.push(...CamelUi.getComponentsDslMetaModel("consumer"));
+            result.push(...CamelUi.getCoreSystemsDslMetaModel("consumer"));
             result.push(...CamelUi.getKameletDslMetaModel("source"));
         } else {
             if (showSteps) {
@@ -147,6 +148,7 @@ export class CamelUi {
                     })
                 }
                 result.push(...CamelUi.getComponentsDslMetaModel("producer"));
+                result.push(...CamelUi.getCoreSystemsDslMetaModel("producer"));
                 result.push(...CamelUi.getKameletDslMetaModel("action"));
                 result.push(...CamelUi.getKameletDslMetaModel("sink"));
             } else {
@@ -163,7 +165,174 @@ export class CamelUi {
 
     static getDslMetaModel = (className: string): DslMetaModel => {
         const el = CamelMetadataApi.getCamelModelMetadataByClassName(className);
-        return  new DslMetaModel({dsl: className, name: el?.name, title: el?.title, description: el?.description, labels: el?.labels, navigation: el?.labels, type: "DSL"})
+        return new DslMetaModel({ dsl: className, name: el?.name, title: el?.title, description: el?.description, labels: el?.labels, navigation: el?.labels, type: "DSL" })
+    }
+
+    static getCoreSystemsDslMetaModel = (type: 'consumer' | "producer"): DslMetaModel[] => {
+
+        var a: [string, string, string, string, Map<string, string> | null][] = [];
+        a.push(["adafy-jira", "jira", "Adafy Jira", "Here's our description", new Map<string, string>([
+            ["connectionString", "ourlocalhost"],
+            ["something", "else"]
+        ])]);
+
+        a.push(["adafy-mqtt", "paho", "Local MQTT", "Here's our description", new Map<string, string>([
+            ["connectionString", "tcp://ffddf"],
+        ])]);
+
+        a.push(["cust-eh", "kamelet:azure-eventhubs-sink", "EH Sink", "Here's our description", new Map<string, string>([
+            ["sharedAccessKey", "testttttt"],
+            ["sharedAccessName", "dsdsdsdsds"]
+        ])]);        
+
+        a.push(["cust2-sb", "kamelet:azure-servicebus-source", "ASB Source", "Here's our description", new Map<string, string>([
+            ["sharedAccessKey", "testttttt"],
+            ["sharedAccessName", "dsdsdsdsds"]
+        ])]);    
+
+        let result = [];
+        for(let [name, cameltype, title, description, configuration] of a){
+            if (cameltype.startsWith("kamelet:")){
+                var kameletType = cameltype.replace("kamelet:", "");
+                var kamelet = KameletApi.getKamelets().filter(c => c.metadata.name == kameletType)[0];
+                if (kamelet) {
+                    let kameletType = "source";
+                    if (type == "producer"){
+                        kameletType = "sink";
+                    }
+        
+                    if (kamelet.metadata.labels["camel.apache.org/kamelet.type"] == kameletType){
+                        result.push(new DslMetaModel({
+                            dsl: cameltype === 'consumer' ? "FromDefinition" : "ToDefinition",
+                            uri: "kamelet:" + kamelet.metadata.name,
+                            navigation: "coresystem",
+                            labels: "custom",
+                            type: cameltype === 'consumer' ? 'consumer' : 'producer',
+                            title: title,
+                            description: description,
+                            version: "1.0.0",
+                            name: title,
+                            properties: configuration
+                        }));
+                    }
+                }
+            }
+            else {
+                var component = ComponentApi.findByName(cameltype);
+                if (component) {
+                    if (type == "consumer" && component.component.producerOnly) {
+                        continue;
+                    }
+
+                    if (type == "producer" && component.component.consumerOnly) {
+                        continue;
+                    }
+
+                    result.push(new DslMetaModel({
+                        dsl: cameltype === 'consumer' ? "FromDefinition" : "ToDefinition",
+                        uri: cameltype,
+                        navigation: "coresystem",
+                        labels: "custom",
+                        type: cameltype === 'consumer' ? 'consumer' : 'producer',
+                        title: title,
+                        description: description,
+                        version: "1.0.0",
+                        name: title,
+                        properties: configuration
+                    }));                    
+                }
+
+            }
+        }
+
+        // r.push(new DslMetaModel({
+        //     dsl: type === 'consumer' ? "FromDefinition" : "ToDefinition",
+        //     uri: "jira",
+        //     navigation: "coresystem",
+        //     labels: "custom",
+        //     type: type === 'consumer' ? 'consumer' : 'producer',
+        //     title: "Adafy Jira",
+        //     description: "Our Jira",
+        //     version: "1.0.0",
+        //     name: "Adafy Jira",
+        //     properties: new Map<string, string>([
+        //         ["connectionString", "ourlocalhost"],
+        //         ["something", "else"]
+        //     ])
+        // }));
+
+        // r.push(new DslMetaModel({
+        //     dsl: type === 'consumer' ? "FromDefinition" : "ToDefinition",
+        //     uri: "paho",
+        //     navigation: "coresystem",
+        //     labels: "custom",
+        //     type: type === 'consumer' ? 'consumer' : 'producer',
+        //     title: "MQTT Broker",
+        //     description: "Adafy MQTT",
+        //     version: "1.0.0",
+        //     name: "MQTT"
+        // }));
+
+        // r.push(new DslMetaModel({
+        //     dsl: type === 'consumer' ? "FromDefinition" : "ToDefinition",
+        //     uri: "kamelet:azure-eventhubs-sink",
+        //     navigation: "coresystem",
+        //     labels: "custom",
+        //     type: type === 'consumer' ? 'consumer' : 'producer',
+        //     title: "Azure EventHub Target",
+        //     description: "Our EventHub",
+        //     version: "1.0.0",
+        //     name: "Local Azure Eventhub",
+        //     properties: new Map<string, string>([
+        //         ["sharedAccessKey", "testttttt"],
+        //         ["sharedAccessName", "dsdsdsdsds"]
+        //     ])
+        // }));
+
+        // //kamelet:azure-servicebus-source
+
+        // var kamelet = KameletApi.getKamelets().filter(c => c.metadata.name == "azure-servicebus-source")[0];
+        // if (kamelet) {
+        //     let kameletType = "source";
+        //     if (type == "producer"){
+        //         kameletType = "sink";
+        //     }
+
+        //     if (kamelet.metadata.labels["camel.apache.org/kamelet.type"] == kameletType){
+        //         r.push(new DslMetaModel({
+        //             dsl: type === 'consumer' ? "FromDefinition" : "ToDefinition",
+        //             uri: "kamelet:" + kamelet.metadata.name,
+        //             navigation: "coresystem",
+        //             labels: "custom",
+        //             type: type === 'consumer' ? 'consumer' : 'producer',
+        //             title: "Azure ServiceBus Source",
+        //             description: "Our Servicebus",
+        //             version: "1.0.0",
+        //             name: "Local Azure Service Bus",
+        //             properties: new Map<string, string>([
+        //                 ["sharedAccessKey", "testttttt"],
+        //                 ["sharedAccessName", "dsdsdsdsds"]
+        //             ])
+        //         }));
+        //     }
+        // }
+
+        return result;
+
+        //       return KameletApi.getKamelets().filter((k) => k.metadata.labels["camel.apache.org/kamelet.type"] === type)
+
+        // return ComponentApi.getComponents().filter((c) => type === 'consumer' ? !c.component.producerOnly : !c.component.consumerOnly)
+        //     .map((c) =>
+        //         new DslMetaModel({
+        //             dsl: type === 'consumer' ? "FromDefinition" : "ToDefinition",
+        //             uri: c.component.name,
+        //             navigation: "coresystem",
+        //             labels: c.component.label,
+        //             type: type === 'consumer' ? 'consumer' : 'producer',
+        //             title: c.component.title,
+        //             description: c.component.description,
+        //             version: c.component.version,
+        //         }));
     }
 
     static getComponentsDslMetaModel = (type: 'consumer' | "producer"): DslMetaModel[] => {
@@ -221,17 +390,17 @@ export class CamelUi {
     }
 
     static hasDirectUri = (element: CamelElement): boolean => {
-        return this.hasUriStartWith(element,'direct');
+        return this.hasUriStartWith(element, 'direct');
     }
 
     static hasSedaUri = (element: CamelElement): boolean => {
-        return this.hasUriStartWith(element,'seda');
+        return this.hasUriStartWith(element, 'seda');
     }
 
     static hasUriStartWith = (element: CamelElement, text: string): boolean => {
         if ((element as any).uri && typeof (element as any).uri === 'string') {
             return (element as any).uri.startsWith(text);
-        } else if (element.dslName === 'SagaDefinition'){
+        } else if (element.dslName === 'SagaDefinition') {
             const completion = (element as SagaDefinition).completion || '';
             const compensation = (element as SagaDefinition).compensation || '';
             return completion.startsWith(text) || compensation.startsWith(text);
@@ -241,12 +410,12 @@ export class CamelUi {
     }
 
     static getInternalRouteUris = (integration: Integration, componentName: string, showComponentName: boolean = true): string[] => {
-        const result:string[] = [];
+        const result: string[] = [];
         integration.spec.flows?.filter(f => f.dslName === 'RouteDefinition')
             .filter((r: RouteDefinition) => r.from.uri.startsWith(componentName))
             .forEach((r: RouteDefinition) => {
                 if (showComponentName) result.push(r.from.uri)
-                else result.push(r.from.uri.replace(componentName+":", ""));
+                else result.push(r.from.uri.replace(componentName + ":", ""));
             });
         return result;
     }
@@ -310,7 +479,7 @@ export class CamelUi {
     }
 
     static isShowExpressionTooltip = (element: CamelElement): boolean => {
-        if (element.hasOwnProperty("expression")){
+        if (element.hasOwnProperty("expression")) {
             const exp = CamelDefinitionApiExt.getExpressionValue((element as any).expression);
             return (exp !== undefined && (exp as any)?.expression?.trim().length > 0);
         }
@@ -319,7 +488,7 @@ export class CamelUi {
 
     static isShowUriTooltip = (element: CamelElement): boolean => {
         const uri: string = (element as any).uri;
-        if (uri !== undefined && !uri.startsWith("kamelet")){
+        if (uri !== undefined && !uri.startsWith("kamelet")) {
             return ComponentApi.getComponentNameFromUri(uri) !== uri;
         }
         return false;
@@ -446,7 +615,7 @@ export class CamelUi {
                 return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzJweCIgaGVpZ2h0PSIzMnB4IiB2aWV3Qm94PSIwIDAgMzIgMzIiIGlkPSJpY29uIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDpub25lO308L3N0eWxlPjwvZGVmcz48dGl0bGU+d2FybmluZzwvdGl0bGU+PHBhdGggZD0iTTE2LDJBMTQsMTQsMCwxLDAsMzAsMTYsMTQsMTQsMCwwLDAsMTYsMlptMCwyNkExMiwxMiwwLDEsMSwyOCwxNiwxMiwxMiwwLDAsMSwxNiwyOFoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAgMCkiLz48cmVjdCB4PSIxNSIgeT0iOCIgd2lkdGg9IjIiIGhlaWdodD0iMTEiLz48cGF0aCBkPSJNMTYsMjJhMS41LDEuNSwwLDEsMCwxLjUsMS41QTEuNSwxLjUsMCwwLDAsMTYsMjJaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwIDApIi8+PHJlY3QgaWQ9Il9UcmFuc3BhcmVudF9SZWN0YW5nbGVfIiBkYXRhLW5hbWU9IiZsdDtUcmFuc3BhcmVudCBSZWN0YW5nbGUmZ3Q7IiBjbGFzcz0iY2xzLTEiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIvPjwvc3ZnPg==";
             case "ScriptDefinition":
                 return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2cHgiIGhlaWdodD0iMjU2cHgiIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBpZD0iRmxhdCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cGF0aCBkPSJNNDMuMTc1MjksMTI4YTI5Ljc4NTIsMjkuNzg1MiwwLDAsMSw4LjAyMywxMC4yNTk3N0M1NiwxNDguMTYzMDksNTYsMTYwLjI4MTI1LDU2LDE3MmMwLDI0LjMxMzQ4LDEuMDE5NTMsMzYsMjQsMzZhOCw4LDAsMCwxLDAsMTZjLTE3LjQ4MTQ1LDAtMjkuMzI0MjItNi4xNDM1NS0zNS4xOTgyNC0xOC4yNTk3N0M0MCwxOTUuODM2OTEsNDAsMTgzLjcxODc1LDQwLDE3MmMwLTI0LjMxMzQ4LTEuMDE5NTMtMzYtMjQtMzZhOCw4LDAsMCwxLDAtMTZjMjIuOTgwNDcsMCwyNC0xMS42ODY1MiwyNC0zNiwwLTExLjcxODc1LDAtMjMuODM2OTEsNC44MDE3Ni0zMy43NDAyM0M1MC42NzU3OCwzOC4xNDM1NSw2Mi41MTg1NSwzMiw4MCwzMmE4LDgsMCwwLDEsMCwxNkM1Ny4wMTk1Myw0OCw1Niw1OS42ODY1Miw1Niw4NGMwLDExLjcxODc1LDAsMjMuODM2OTEtNC44MDE3NiwzMy43NDAyM0EyOS43ODUyLDI5Ljc4NTIsMCwwLDEsNDMuMTc1MjksMTI4Wk0yNDAsMTIwYy0yMi45ODA0NywwLTI0LTExLjY4NjUyLTI0LTM2LDAtMTEuNzE4NzUsMC0yMy44MzY5MS00LjgwMTc2LTMzLjc0MDIzQzIwNS4zMjQyMiwzOC4xNDM1NSwxOTMuNDgxNDUsMzIsMTc2LDMyYTgsOCwwLDAsMCwwLDE2YzIyLjk4MDQ3LDAsMjQsMTEuNjg2NTIsMjQsMzYsMCwxMS43MTg3NSwwLDIzLjgzNjkxLDQuODAxNzYsMzMuNzQwMjNBMjkuNzg1MiwyOS43ODUyLDAsMCwwLDIxMi44MjQ3MSwxMjhhMjkuNzg1MiwyOS43ODUyLDAsMCwwLTguMDIzLDEwLjI1OTc3QzIwMCwxNDguMTYzMDksMjAwLDE2MC4yODEyNSwyMDAsMTcyYzAsMjQuMzEzNDgtMS4wMTk1MywzNi0yNCwzNmE4LDgsMCwwLDAsMCwxNmMxNy40ODE0NSwwLDI5LjMyNDIyLTYuMTQzNTUsMzUuMTk4MjQtMTguMjU5NzdDMjE2LDE5NS44MzY5MSwyMTYsMTgzLjcxODc1LDIxNiwxNzJjMC0yNC4zMTM0OCwxLjAxOTUzLTM2LDI0LTM2YTgsOCwwLDAsMCwwLTE2WiIvPgo8L3N2Zz4K";
-           case "PausableDefinition":
+            case "PausableDefinition":
                 return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzJweCIgaGVpZ2h0PSIzMnB4IiB2aWV3Qm94PSIwIDAgMzIgMzIiIGlkPSJpY29uIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDpub25lO308L3N0eWxlPjwvZGVmcz48dGl0bGU+cGF1c2UtLWZpbGxlZDwvdGl0bGU+PHBhdGggZD0iTTEyLDZIMTBBMiwyLDAsMCwwLDgsOFYyNGEyLDIsMCwwLDAsMiwyaDJhMiwyLDAsMCwwLDItMlY4YTIsMiwwLDAsMC0yLTJaIi8+PHBhdGggZD0iTTIyLDZIMjBhMiwyLDAsMCwwLTIsMlYyNGEyLDIsMCwwLDAsMiwyaDJhMiwyLDAsMCwwLDItMlY4YTIsMiwwLDAsMC0yLTJaIi8+PHJlY3QgaWQ9Il9UcmFuc3BhcmVudF9SZWN0YW5nbGVfIiBkYXRhLW5hbWU9IiZsdDtUcmFuc3BhcmVudCBSZWN0YW5nbGUmZ3Q7IiBjbGFzcz0iY2xzLTEiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIvPjwvc3ZnPg==";
             case "StopDefinition":
                 return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzJweCIgaGVpZ2h0PSIzMnB4IiB2aWV3Qm94PSIwIDAgMzIgMzIiIGlkPSJpY29uIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDpub25lO308L3N0eWxlPjwvZGVmcz48dGl0bGU+c3RvcC0tZmlsbGVkPC90aXRsZT48cGF0aCBkPSJNMjQsNkg4QTIsMiwwLDAsMCw2LDhWMjRhMiwyLDAsMCwwLDIsMkgyNGEyLDIsMCwwLDAsMi0yVjhhMiwyLDAsMCwwLTItMloiLz48cmVjdCBpZD0iX1RyYW5zcGFyZW50X1JlY3RhbmdsZV8iIGRhdGEtbmFtZT0iJmx0O1RyYW5zcGFyZW50IFJlY3RhbmdsZSZndDsiIGNsYXNzPSJjbHMtMSIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIi8+PC9zdmc+";
@@ -465,20 +634,20 @@ export class CamelUi {
         }
     }
 
-    static getIconForDsl = (dsl: DslMetaModel):JSX.Element => {
+    static getIconForDsl = (dsl: DslMetaModel): JSX.Element => {
         if (dsl.dsl && (dsl.dsl === "KameletDefinition" || dsl.navigation === 'kamelet')) {
             return this.getIconFromSource(CamelUi.getKameletIconByName(dsl.name));
         } else if ((dsl.dsl && dsl.dsl === "FromDefinition")
             && dsl.uri?.startsWith("kamelet")) {
             return this.getIconFromSource(CamelUi.getKameletIconByUri(dsl.uri));
-        } else if (dsl.navigation === 'component' ){
+        } else if (dsl.navigation === 'component') {
             return this.getIconFromSource(camelIcon);
         } else {
             return CamelUi.getIconForDslName(dsl.dsl);
         }
     }
 
-    static getIconForElement = (element: CamelElement):JSX.Element => {
+    static getIconForElement = (element: CamelElement): JSX.Element => {
         const k: KameletModel | undefined = CamelUtil.getKamelet(element);
         if (["FromDefinition", "KameletDefinition"].includes(element.dslName)) {
             return k ? this.getIconFromSource(k.icon()) : CamelUi.getIconForDslName(element.dslName);
@@ -488,24 +657,24 @@ export class CamelUi {
             return this.getIconForDslName(element.dslName);
         }
     }
-    static getIconForDslName = (dslName: string):JSX.Element => {
+    static getIconForDslName = (dslName: string): JSX.Element => {
         switch (dslName) {
-            case 'AggregateDefinition': return <AggregateIcon/>;
-            case 'ChoiceDefinition' :return <ChoiceIcon/>;
-            case 'SplitDefinition' :return <SplitIcon/>;
-            case 'SagaDefinition' :return <SagaIcon/>;
-            case 'FilterDefinition' :return <FilterIcon/>;
-            case 'SortDefinition' :return <SortIcon/>;
-            case 'OnCompletionDefinition' :return <OnCompletion/>;
-            case 'InterceptDefinition' :return <Intercept/>;
-            case 'InterceptFromDefinition' :return <InterceptFrom/>;
-            case 'InterceptSendToEndpointDefinition' :return <InterceptSendToEndpoint/>;
+            case 'AggregateDefinition': return <AggregateIcon />;
+            case 'ChoiceDefinition': return <ChoiceIcon />;
+            case 'SplitDefinition': return <SplitIcon />;
+            case 'SagaDefinition': return <SagaIcon />;
+            case 'FilterDefinition': return <FilterIcon />;
+            case 'SortDefinition': return <SortIcon />;
+            case 'OnCompletionDefinition': return <OnCompletion />;
+            case 'InterceptDefinition': return <Intercept />;
+            case 'InterceptFromDefinition': return <InterceptFrom />;
+            case 'InterceptSendToEndpointDefinition': return <InterceptSendToEndpoint />;
             default: return this.getIconFromSource(CamelUi.getIconSrcForName(dslName))
         }
     }
 
-    static getIconFromSource = (src: string):JSX.Element => {
-        return <img draggable={false} src={src} className="icon" alt="icon"/>
+    static getIconFromSource = (src: string): JSX.Element => {
+        return <img draggable={false} src={src} className="icon" alt="icon" />
     }
 
     static getConnectionIcon = (element: CamelElement): string => {
@@ -525,7 +694,7 @@ export class CamelUi {
         result.set('rest', i.spec.flows?.filter((e: any) => e.dslName === 'RestDefinition').length || 0);
         result.set('routeConfiguration', i.spec.flows?.filter((e: any) => e.dslName === 'RouteConfigurationDefinition').length || 0);
         const beans = i.spec.flows?.filter((e: any) => e.dslName === 'Beans');
-        if (beans && beans.length > 0 && beans[0].beans && beans[0].beans.length > 0){
+        if (beans && beans.length > 0 && beans[0].beans && beans[0].beans.length > 0) {
             result.set('beans', Array.from(beans[0].beans).length);
         }
         return result;
