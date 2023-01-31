@@ -29,6 +29,7 @@ import { toPng } from 'html-to-image';
 import { RouteDesigner, RouteDesignerState } from "./RouteDesigner";
 import { findDOMNode } from "react-dom";
 import { Subscription } from "rxjs";
+import { ComponentApi } from 'karavan-core/lib/api/ComponentApi';
 
 export class RouteDesignerLogic {
 
@@ -287,16 +288,35 @@ export class RouteDesignerLogic {
                 let newStep = to;
 
                 if (dsl.navigation == "coresystem") {
-                    const parametersFromDsl: any = { ...(dsl as any).parameters };
+                    const parametersFromDsl: any = { ...(dsl as any).properties };
                     if (parametersFromDsl) {
+
                         const clone = (CamelUtil.cloneStep(to));
-                        (clone as any).parameters = parametersFromDsl;
-    
+
+                        const parameters: any = {  };
+
+                        for (let [key, [, isPath]] of dsl.properties) {
+                            var valuePlaceholder = "{{" + dsl.name + "." + key + "}}";
+                            if (isPath) {
+                                var newUri = ComponentApi.buildComponentUri((clone as any).uri, key, valuePlaceholder);
+                                (clone as any).uri = newUri;
+                            }
+                            else {
+                                parameters[key] = valuePlaceholder;
+                            }
+                        }
+
+                        (clone as any).parameters = parameters;
+
                         newStep = clone;
                     }
-    
-                    if (dsl.description){
-                        (newStep as any).description = dsl.description;
+
+                    if (dsl.description) {
+                        (newStep as any).description = dsl.title;
+                    }
+
+                    if (newStep.hasId()) {
+                        (newStep as any).id = (newStep as any).id + "#core-ref:" + dsl.name;
                     }
                 }
 

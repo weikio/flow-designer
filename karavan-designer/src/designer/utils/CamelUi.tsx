@@ -183,26 +183,35 @@ export class CamelUi {
         a.push(["cust-eh", "kamelet:azure-eventhubs-sink", "EH Sink", "Here's our description", new Map<string, string>([
             ["sharedAccessKey", "testttttt"],
             ["sharedAccessName", "dsdsdsdsds"]
-        ])]);        
+        ])]);
 
         a.push(["cust2-sb", "kamelet:azure-servicebus-source", "ASB Source", "Here's our description", new Map<string, string>([
             ["sharedAccessKey", "testttttt"],
             ["sharedAccessName", "dsdsdsdsds"]
-        ])]);    
+        ])]);
+
+        a.push(["our-web", "https", "Our HTTP target", "Here's our description", new Map<string, string>([
+            ["httpUri", "webhook.site/e030a175-fd2d-4688-b9ab-ce1456b4f353"],
+            ["httpMethod", "POST"]
+        ])]);
+
+        var json = JSON.stringify(a, replacer);
+        console.log(json);
 
         let result = [];
-        for(let [name, cameltype, title, description, configuration] of a){
-            if (cameltype.startsWith("kamelet:")){
+        for (let [name, cameltype, title, description, configuration] of a) {
+            if (cameltype.startsWith("kamelet:")) {
                 var kameletType = cameltype.replace("kamelet:", "");
                 var kamelet = KameletApi.getKamelets().filter(c => c.metadata.name == kameletType)[0];
                 if (kamelet) {
                     let kameletType = "source";
-                    if (type == "producer"){
+                    if (type == "producer") {
                         kameletType = "sink";
                     }
-        
-                    if (kamelet.metadata.labels["camel.apache.org/kamelet.type"] == kameletType){
-                        result.push(new DslMetaModel({
+
+                    if (kamelet.metadata.labels["camel.apache.org/kamelet.type"] == kameletType) {
+
+                        const kameletMetaModel = new DslMetaModel({
                             dsl: cameltype === 'consumer' ? "FromDefinition" : "ToDefinition",
                             uri: "kamelet:" + kamelet.metadata.name,
                             navigation: "coresystem",
@@ -211,9 +220,21 @@ export class CamelUi {
                             title: title,
                             description: description,
                             version: "1.0.0",
-                            name: title,
-                            properties: configuration
-                        }));
+                            name: name
+                        });
+
+                        const parameters = new Map<string, [string, boolean]>();
+                    
+                        if (configuration) {
+                            configuration.forEach((value, key) => {
+                                    parameters.set(key, [value, false]);
+                                }
+                            );
+                        }
+
+                        kameletMetaModel.properties = parameters;
+
+                        result.push(kameletMetaModel);
                     }
                 }
             }
@@ -228,22 +249,51 @@ export class CamelUi {
                         continue;
                     }
 
-                    result.push(new DslMetaModel({
-                        dsl: cameltype === 'consumer' ? "FromDefinition" : "ToDefinition",
+                    const componentMetaModel = new DslMetaModel({
+                        dsl: type === 'consumer' ? "FromDefinition" : "ToDefinition",
                         uri: cameltype,
                         navigation: "coresystem",
                         labels: "custom",
-                        type: cameltype === 'consumer' ? 'consumer' : 'producer',
+                        type: type === 'consumer' ? 'consumer' : 'producer',
                         title: title,
                         description: description,
                         version: "1.0.0",
-                        name: title,
-                        properties: configuration
-                    }));                    
+                        name: name
+                    });
+
+                    const parameters = new Map<string, [string, boolean]>();
+
+                    if (configuration) {
+                        var componentParameters = ComponentApi.getComponentProperties(cameltype, type);
+
+                        configuration.forEach((value, key) => {
+                            var foundComponentParameter = componentParameters.filter(p => p.name == key)[0];
+                            if (foundComponentParameter) {
+                                parameters.set(key, [value, foundComponentParameter.kind == "path"]);
+                            }
+                            else {
+                                parameters.set(key, [value, false]);
+                            }
+                        });
+                    }
+
+                    componentMetaModel.properties = parameters;
+                    result.push(componentMetaModel);
                 }
 
             }
         }
+
+        function replacer(key: any, value: any[]) {
+            if(value instanceof Map) {
+              return {
+                dataType: 'Map',
+                value: Array.from(value.entries()), // or with spread: value: [...value]
+              };
+            } else {
+              return value;
+            }
+          }
 
         // r.push(new DslMetaModel({
         //     dsl: type === 'consumer' ? "FromDefinition" : "ToDefinition",

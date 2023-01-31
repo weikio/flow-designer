@@ -25,6 +25,7 @@ import '../karavan.css';
 import { CamelUi } from "../utils/CamelUi";
 import { DslMetaModel } from "../utils/DslMetaModel";
 import { CamelUtil } from "karavan-core/lib/api/CamelUtil";
+import { ComponentApi } from 'karavan-core/lib/api/ComponentApi';
 
 interface Props {
     onDslSelect: (dsl: DslMetaModel, parentId: string, position?: number | undefined) => void,
@@ -73,9 +74,10 @@ export class DslSelector extends React.Component<Props, State> {
         if (dsl.navigation == "coresystem"){ 
             if (dsl.properties){
                 const parameters: any = {  };
-                for (let [key, value] of dsl.properties){
-                    parameters[key] = value;
+                for (let [key, [, isPath]] of dsl.properties){
+                    parameters[key] = ["{{" + dsl.name + "." + key + "}}", isPath];
                 }
+
                 dsl.parameters = parameters;
             }
         }
