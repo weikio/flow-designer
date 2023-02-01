@@ -34,6 +34,7 @@ import {KaravanIcon} from "./designer/utils/KaravanIcons";
 import './designer/karavan.css';
 import {DesignerPage} from "./DesignerPage";
 import {TemplateApi} from "karavan-core/lib/api/TemplateApi";
+import {CoreSystemsApi} from "./designer/utils/CoreSystemsApi";
 
 class ToastMessage {
     id: string = ''
@@ -109,7 +110,7 @@ class App extends React.Component<Props, State> {
             promises.push(fetch("routes/" + yamlFileName));
         }
 
-        promises.push(fetch("components/coresystems.json"));
+        promises.push(fetch("coresystems/systems.json"));
 
         Promise.all(promises).then(responses =>
             Promise.all(responses.map(response => response.text()))
@@ -142,7 +143,9 @@ class App extends React.Component<Props, State> {
             const coresystems: [] = JSON.parse(data[5]);
             const corejsons: string[] = [];
             coresystems.forEach(c => corejsons.push(JSON.stringify(c)));
-            ComponentApi.saveComponents(corejsons, false);
+            CoreSystemsApi.saveCoreSystems(corejsons, true);
+
+            this.toast("Success", "Loaded " + corejsons.length + " core systems", 'success');
 
             this.toast("Success YAML Loaded", data[4], 'success');
             this.setState({loaded: true});
@@ -156,7 +159,7 @@ class App extends React.Component<Props, State> {
 
     save(filename: string, yaml: string, propertyOnly: boolean) {
         this.setState({name: filename, yaml: yaml});
-        console.log(yaml);
+        // console.log(yaml);
     }
 
     getSpinner() {

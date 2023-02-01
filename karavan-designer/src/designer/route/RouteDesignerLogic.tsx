@@ -30,6 +30,7 @@ import { RouteDesigner, RouteDesignerState } from "./RouteDesigner";
 import { findDOMNode } from "react-dom";
 import { Subscription } from "rxjs";
 import { ComponentApi } from 'karavan-core/lib/api/ComponentApi';
+import { CoreSystemsApi } from '../utils/CoreSystemsApi';
 
 export class RouteDesignerLogic {
 
@@ -280,44 +281,23 @@ export class RouteDesignerLogic {
         switch (dsl.dsl) {
             case 'FromDefinition':
                 const route = CamelDefinitionApi.createRouteDefinition({ from: new FromDefinition({ uri: dsl.uri }) });
-                this.addStep(route, parentId, position)
+
+                let newRoute = route;
+                if (dsl.navigation == "coresystem") {
+                    const modifiedFrom = handleCoreSystem(route.from);
+                    (newRoute as any).from = modifiedFrom;
+                }
+                
+                this.addStep(newRoute, parentId, position)
                 break;
             case 'ToDefinition':
                 const to = CamelDefinitionApi.createStep(dsl.dsl, { uri: dsl.uri });
 
-                let newStep = to;
-
+                let newStep: CamelElement;
                 if (dsl.navigation == "coresystem") {
-                    const parametersFromDsl: any = { ...(dsl as any).properties };
-                    if (parametersFromDsl) {
-
-                        const clone = (CamelUtil.cloneStep(to));
-
-                        const parameters: any = {  };
-
-                        for (let [key, [, isPath]] of dsl.properties) {
-                            var valuePlaceholder = "{{" + dsl.name + "." + key + "}}";
-                            if (isPath) {
-                                var newUri = ComponentApi.buildComponentUri((clone as any).uri, key, valuePlaceholder);
-                                (clone as any).uri = newUri;
-                            }
-                            else {
-                                parameters[key] = valuePlaceholder;
-                            }
-                        }
-
-                        (clone as any).parameters = parameters;
-
-                        newStep = clone;
-                    }
-
-                    if (dsl.description) {
-                        (newStep as any).description = dsl.title;
-                    }
-
-                    if (newStep.hasId()) {
-                        (newStep as any).id = (newStep as any).id + "#core-ref:" + dsl.name;
-                    }
+                    newStep = handleCoreSystem(to);
+                } else {
+                    newStep = to;
                 }
 
                 this.addStep(newStep, parentId, position);
@@ -334,6 +314,41 @@ export class RouteDesignerLogic {
                 const step = CamelDefinitionApi.createStep(dsl.dsl, undefined);
                 this.addStep(step, parentId, position)
                 break;
+        }
+
+        function handleCoreSystem(to: CamelElement) {
+
+            const result = (CamelUtil.cloneStep(to));
+
+            const parameters: any = {};
+
+            const coreSystem = CoreSystemsApi.getCoreSystems().filter(c => c.name == dsl.name)[0];
+
+            if (coreSystem) {
+                for (let parameterName of coreSystem.parameters) {
+                    const valuePlaceholder = "{{" + dsl.name + "." + parameterName + "}}";
+                    var isPathParameter = CoreSystemsApi.getIsPathParameter(coreSystem.type, "producer", parameterName);
+                    if (isPathParameter) {
+                        var newUri = ComponentApi.buildComponentUri((result as any).uri, parameterName, valuePlaceholder);
+                        (result as any).uri = newUri;
+                    }
+                    else {
+                        parameters[parameterName] = valuePlaceholder;
+                    }
+                }
+
+                (result as any).parameters = parameters;
+            }
+
+            if (dsl.description) {
+                (result as any).description = dsl.title;
+            }
+
+            if (result.hasId()) {
+                (result as any).id = (result as any).id + "#core-ref:" + dsl.name;
+            }
+
+            return result;
         }
     }
 

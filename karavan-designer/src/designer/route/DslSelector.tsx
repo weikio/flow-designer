@@ -71,16 +71,16 @@ export class DslSelector extends React.Component<Props, State> {
         evt.stopPropagation();
         this.setState({ filter: "" });
 
-        if (dsl.navigation == "coresystem"){ 
-            if (dsl.properties){
-                const parameters: any = {  };
-                for (let [key, [, isPath]] of dsl.properties){
-                    parameters[key] = ["{{" + dsl.name + "." + key + "}}", isPath];
-                }
+        // if (dsl.navigation == "coresystem"){ 
+        //     if (dsl.properties){
+        //         const parameters: any = {  };
+        //         for (let [key, [, isPath]] of dsl.properties){
+        //             parameters[key] = ["{{" + dsl.name + "." + key + "}}", isPath];
+        //         }
 
-                dsl.parameters = parameters;
-            }
-        }
+        //         dsl.parameters = parameters;
+        //     }
+        // }
 
         this.props.onDslSelect.call(this, dsl, this.props.parentId, this.props.position);
     }

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "local-mqtt",
+    "title": "Local MQTT",
+    "description": "The localhost MQTT broker",
+    "category": "core",
+    "type": "paho",
+    "parameters": ["topic", "brokerUrl"]
+  },
+  {
+    "name": "our-web",
+    "title": "Our HTTP target",
+    "description": "Here's our description",
+    "category": "core",
+    "type": "https",
+    "parameters": ["httpUri", "httpMethod"]
+  }
+]
