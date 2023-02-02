@@ -17,7 +17,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import "./index.css";
-import "@patternfly/patternfly/patternfly.css";
+// import "@patternfly/patternfly/patternfly.css";
 import App from "./App";
 
 ReactDOM.render(

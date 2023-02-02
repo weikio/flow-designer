@@ -8,7 +8,7 @@
 </head>
 
 <body class="">
-  <div id="root"></div>
+  <div id="root" class="simple-designer" data-coresystemsurl="https://webhook.site/1488aaf9-c2f6-47b0-83ee-ab885ed99802" data-integrationname="test" data-coresystemsurl=""></div>
 </body>
 
 </html>
@@ -16,4 +16,14 @@
 <script>
   localStorage.setItem("yamlFileName", "log.yaml");
   localStorage.setItem("integrationName", "");
+
+  document.addEventListener("designer-event", function ({ detail }) {
+    if (detail.eventType == "yaml-changed") {
+      let yaml = detail.yaml;
+      // console.log(yaml);
+
+      let integrationName = detail.name;
+      console.log(integrationName);
+    }
+  })
 </script>

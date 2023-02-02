@@ -15,9 +15,9 @@ body,
   flex-direction: column;
 }
 
-.karavan .pf-c-page__main {
+/* .karavan .pf-c-page__main {
   overflow: hidden;
-}
+} */
 
 .logo {
   display: flex;

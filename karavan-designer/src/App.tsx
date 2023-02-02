@@ -21,20 +21,21 @@ import {
     Bullseye, Button, Divider, Flex, FlexItem,
     Page, Spinner, Tooltip,
 } from "@patternfly/react-core";
-import {KameletApi} from "karavan-core/lib/api/KameletApi";
-import {ComponentApi} from "karavan-core/lib/api/ComponentApi";
-import {KameletsPage} from "./kamelets/KameletsPage";
-import {ComponentsPage} from "./components/ComponentsPage";
-import {EipPage} from "./eip/EipPage";
-import {BlueprintIcon} from "@patternfly/react-icons";
+import { KameletApi } from "karavan-core/lib/api/KameletApi";
+import { ComponentApi } from "karavan-core/lib/api/ComponentApi";
+import { KameletsPage } from "./kamelets/KameletsPage";
+import { ComponentsPage } from "./components/ComponentsPage";
+import { EipPage } from "./eip/EipPage";
+import { BlueprintIcon } from "@patternfly/react-icons";
 import KameletsIcon from "@patternfly/react-icons/dist/js/icons/registry-icon";
 import EipIcon from "@patternfly/react-icons/dist/js/icons/topology-icon";
 import ComponentsIcon from "@patternfly/react-icons/dist/js/icons/module-icon";
-import {KaravanIcon} from "./designer/utils/KaravanIcons";
+import { KaravanIcon } from "./designer/utils/KaravanIcons";
 import './designer/karavan.css';
-import {DesignerPage} from "./DesignerPage";
-import {TemplateApi} from "karavan-core/lib/api/TemplateApi";
-import {CoreSystemsApi} from "./designer/utils/CoreSystemsApi";
+import { DesignerPage } from "./DesignerPage";
+import { TemplateApi } from "karavan-core/lib/api/TemplateApi";
+import { CoreSystemsApi } from "./designer/utils/CoreSystemsApi";
+import { EmbeddedDesigner } from "./designer/utils/EmbeddedDesigner";
 
 class ToastMessage {
     id: string = ''
@@ -87,16 +88,22 @@ class App extends React.Component<Props, State> {
     toast = (title: string, text: string, variant: 'success' | 'danger' | 'warning' | 'info' | 'default') => {
         const mess = [];
         mess.push(...this.state.alerts, new ToastMessage(title, text, variant));
-        this.setState({alerts: mess})
+        this.setState({ alerts: mess })
     }
 
     deleteErrorMessage = (id: string) => {
-        this.setState({alerts: this.state.alerts.filter(a => a.id !== id)})
+        this.setState({ alerts: this.state.alerts.filter(a => a.id !== id) })
     }
 
     componentDidMount() {
         const yamlFileName = localStorage.getItem("yamlFileName");
-        const integrationName = localStorage.getItem("integrationName") ?? "example";
+
+        let integrationName = EmbeddedDesigner.integrationName();
+        if (integrationName === "") {
+            integrationName = localStorage.getItem("integrationName") ?? "example";
+        }
+
+        const yamlSource = EmbeddedDesigner.yamlSource();
 
         const promises = [
             fetch("kamelets/kamelets.yaml"),
@@ -105,12 +112,20 @@ class App extends React.Component<Props, State> {
             fetch("snippets/org.apache.camel.Processor")
         ];
 
-        if (yamlFileName != "")
-        {
+        if (yamlSource) {
+            promises.push(fetch(yamlSource));
+        }
+        else if (yamlFileName != "") {
             promises.push(fetch("routes/" + yamlFileName));
         }
 
-        promises.push(fetch("coresystems/systems.json"));
+        let coreSystemsSource = EmbeddedDesigner.coreSystemsSource();
+        if (coreSystemsSource) {
+            promises.push(fetch(coreSystemsSource));
+        }
+        else {
+            promises.push(fetch("coresystems/systems.json"));
+        }
 
         Promise.all(promises).then(responses =>
             Promise.all(responses.map(response => response.text()))
@@ -118,26 +133,17 @@ class App extends React.Component<Props, State> {
             const kamelets: string[] = [];
             data[0].split("\n---\n").map(c => c.trim()).forEach(z => kamelets.push(z));
             KameletApi.saveKamelets(kamelets, true);
-            this.toast("Success", "Loaded " + kamelets.length + " kamelets", 'success');
 
             const components: [] = JSON.parse(data[1]);
             const jsons: string[] = [];
             components.forEach(c => jsons.push(JSON.stringify(c)));
             ComponentApi.saveComponents(jsons, true);
 
-            this.toast("Success", "Loaded " + jsons.length + " components", 'success');
-
             TemplateApi.saveTemplate("org.apache.camel.AggregationStrategy", data[2]);
             TemplateApi.saveTemplate("org.apache.camel.Processor", data[3]);
 
-            if (data[4] != null)
-            {
-                console.log("not fresh");
+            if (data[4] != null) {
                 this.save(integrationName, data[4], false);
-            }
-            else
-            {
-                console.log("fresh");
             }
 
             const coresystems: [] = JSON.parse(data[5]);
@@ -145,43 +151,48 @@ class App extends React.Component<Props, State> {
             coresystems.forEach(c => corejsons.push(JSON.stringify(c)));
             CoreSystemsApi.saveCoreSystems(corejsons, true);
 
-            this.toast("Success", "Loaded " + corejsons.length + " core systems", 'success');
+            if (EmbeddedDesigner.isEnabled() == false) {
+                this.toast("Success", "Loaded " + jsons.length + " components", 'success');
+                this.toast("Success", "Loaded " + kamelets.length + " kamelets", 'success');
+                this.toast("Success", "Loaded " + corejsons.length + " core systems", 'success');
+                this.toast("Success YAML Loaded", data[4], 'success');
+            }
 
-            this.toast("Success YAML Loaded", data[4], 'success');
-            this.setState({loaded: true});
+            this.setState({ loaded: true });
         })
-        .then(() => {
-            console.log("loaded");
-        }).catch(err =>
-            this.toast("Error", err.text, 'danger')
-        );
+            .then(() => {
+            }).catch(err =>
+                this.toast("Error", err.text, 'danger')
+            );
     }
 
     save(filename: string, yaml: string, propertyOnly: boolean) {
-        this.setState({name: filename, yaml: yaml});
-        // console.log(yaml);
+        this.setState({ name: filename, yaml: yaml });
+        const saveEvent = new CustomEvent("designer-event", { detail: { eventType: "yaml-changed", name: filename, yaml: yaml } });
+
+        document.dispatchEvent(saveEvent);
     }
 
     getSpinner() {
         return (
             <Bullseye className="loading-page">
-                <Spinner className="progress-stepper" isSVG diameter="80px" aria-label="Loading..."/>
+                <Spinner className="progress-stepper" isSVG diameter="80px" aria-label="Loading..." />
             </Bullseye>
         )
     }
 
     pageNav = () => {
-        const {pageId} = this.state;
+        const { pageId } = this.state;
         const pages: MenuItem[] = [
-            new MenuItem("designer", "Designer", <BlueprintIcon/>),
-            new MenuItem("kamelets", "Basic", <KameletsIcon/>),
-            new MenuItem("components", "Advanced", <ComponentsIcon/>),
+            new MenuItem("designer", "Designer", <BlueprintIcon />),
+            new MenuItem("kamelets", "Basic", <KameletsIcon />),
+            new MenuItem("components", "Advanced", <ComponentsIcon />),
         ]
-        return (<Flex className="nav-buttons" direction={{default: "column"}} style={{height: "100%"}}
-                      spaceItems={{default: "spaceItemsNone"}}>
-            <FlexItem alignSelf={{default: "alignSelfCenter"}}>
+        return (<Flex className="nav-buttons" direction={{ default: "column" }} style={{ height: "100%" }}
+            spaceItems={{ default: "spaceItemsNone" }}>
+            <FlexItem alignSelf={{ default: "alignSelfCenter" }}>
                 <Tooltip className="logo-tooltip" content={"Apache Camel Karavan"}
-                         position={"right"}>
+                    position={"right"}>
                     {KaravanIcon()}
                 </Tooltip>
             </FlexItem>
@@ -189,20 +200,20 @@ class App extends React.Component<Props, State> {
                 <FlexItem key={page.pageId} className={pageId === page.pageId ? "nav-button-selected" : ""}>
                     <Tooltip content={page.tooltip} position={"right"}>
                         <Button id={page.pageId} icon={page.icon} variant={"plain"}
-                                className={pageId === page.pageId ? "nav-button-selected" : ""}
-                                onClick={event => this.setState({pageId: page.pageId})}
+                            className={pageId === page.pageId ? "nav-button-selected" : ""}
+                            onClick={event => this.setState({ pageId: page.pageId })}
                         />
                     </Tooltip>
                 </FlexItem>
             )}
-            <FlexItem flex={{default: "flex_2"}} alignSelf={{default: "alignSelfCenter"}}>
-                <Divider/>
+            <FlexItem flex={{ default: "flex_2" }} alignSelf={{ default: "alignSelfCenter" }}>
+                <Divider />
             </FlexItem>
         </Flex>)
     }
 
     getPage() {
-        const {key, name, yaml, pageId} = this.state;
+        const { key, name, yaml, pageId } = this.state;
         const dark = document.body.className.includes('vscode-dark');
         switch (pageId) {
             case "designer":
@@ -211,43 +222,46 @@ class App extends React.Component<Props, State> {
                         name={name}
                         yaml={yaml}
                         onSave={(filename, yaml1, propertyOnly) => this.save(filename, yaml1, propertyOnly)}
-                        dark={dark}/>
+                        dark={dark} />
                 )
             case "kamelets":
                 return (
-                    <KameletsPage dark={dark}/>
+                    <KameletsPage dark={dark} />
                 )
             case "components":
                 return (
-                    <ComponentsPage dark={dark}/>
+                    <ComponentsPage dark={dark} />
                 )
             case "eip":
                 return (
-                    <EipPage dark={dark}/>
+                    <EipPage dark={dark} />
                 )
         }
     }
 
     public render() {
-        const {loaded} = this.state;
+        const { loaded } = this.state;
+        const simple = EmbeddedDesigner.isEnabled();
+
         return (
             <Page className="karavan">
                 <AlertGroup isToast isLiveRegion>
                     {this.state.alerts.map((e: ToastMessage) => (
                         <Alert key={e.id} className="main-alert" variant={e.variant} title={e.title}
-                               timeout={e.variant === "success" ? 2000 : 10000}
-                               actionClose={<AlertActionCloseButton onClose={() => this.deleteErrorMessage(e.id)}/>}>
+                            timeout={e.variant === "success" ? 2000 : 10000}
+                            actionClose={<AlertActionCloseButton onClose={() => this.deleteErrorMessage(e.id)} />}>
                             {e.text}
                         </Alert>
                     ))}
                 </AlertGroup>
                 <>
-                    <Flex direction={{default: "row"}} style={{width: "100%", height: "100%"}}
-                          alignItems={{default: "alignItemsStretch"}} spaceItems={{default: 'spaceItemsNone'}}>
-                        <FlexItem>
+                    <Flex direction={{ default: "row" }} style={{ width: "100%", height: "100%" }}
+                        alignItems={{ default: "alignItemsStretch" }} spaceItems={{ default: 'spaceItemsNone' }}>
+                        {simple == false? (<FlexItem>
                             {this.pageNav()}
                         </FlexItem>
-                        <FlexItem flex={{default: "flex_2"}} style={{height: "100%"}}>
+                        ) : (<div />)}
+                        <FlexItem flex={{ default: "flex_2" }} style={{ height: "100%" }}>
                             {loaded !== true && this.getSpinner()}
                             {loaded === true && this.getPage()}
                         </FlexItem>

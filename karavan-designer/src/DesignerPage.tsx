@@ -24,9 +24,10 @@ import {
 import './designer/karavan.css';
 import DownloadIcon from "@patternfly/react-icons/dist/esm/icons/download-icon";
 import DownloadImageIcon from "@patternfly/react-icons/dist/esm/icons/image-icon";
-import {KaravanDesigner} from "./designer/KaravanDesigner";
+import { KaravanDesigner } from "./designer/KaravanDesigner";
 import Editor from "@monaco-editor/react";
-import {EventBus} from "./designer/utils/EventBus";
+import { EventBus } from "./designer/utils/EventBus";
+import { EmbeddedDesigner } from "./designer/utils/EmbeddedDesigner";
 
 interface Props {
     name: string,
@@ -53,7 +54,7 @@ export class DesignerPage extends React.Component<Props, State> {
     }
 
     download = () => {
-        const {name, yaml} = this.props;
+        const { name, yaml } = this.props;
         if (name && yaml) {
             const a = document.createElement('a');
             a.setAttribute('download', 'example.yaml');
@@ -67,7 +68,7 @@ export class DesignerPage extends React.Component<Props, State> {
     }
 
     getDesigner = () => {
-        const {name, yaml} = this.props;
+        const { name, yaml } = this.props;
         return (
             <KaravanDesigner
                 dark={this.props.dark}
@@ -85,7 +86,7 @@ export class DesignerPage extends React.Component<Props, State> {
     }
 
     getEditor = () => {
-        const {name, yaml} = this.props;
+        const { name, yaml } = this.props;
         return (
             <Editor
                 height="100vh"
@@ -103,16 +104,16 @@ export class DesignerPage extends React.Component<Props, State> {
     }
 
     render() {
-        const {name, yaml} = this.props;
-        const {mode} = this.state;
+        const { name, yaml } = this.props;
+        const { mode } = this.state;
         return (
-            <PageSection className="kamelet-section designer-page" padding={{default: 'noPadding'}}>
-                <PageSection className="tools-section" padding={{default: 'noPadding'}}
-                             style={{backgroundColor:"transparent", paddingLeft: "var(--pf-c-page__main-section--PaddingLeft)"}}>
-                    <Flex className="tools" justifyContent={{default: 'justifyContentSpaceBetween'}}>
+            <PageSection className="kamelet-section designer-page" padding={{ default: 'noPadding' }}>
+                <PageSection className="tools-section" padding={{ default: 'noPadding' }}
+                    style={{ backgroundColor: "transparent", paddingLeft: "var(--pf-c-page__main-section--PaddingLeft)" }}>
+                    <Flex className="tools" justifyContent={{ default: 'justifyContentSpaceBetween' }}>
                         <FlexItem>
                             <TextContent className="header">
-                                <Text component="h2">Designer</Text>
+                                {EmbeddedDesigner.isEnabled() == false ? (<Text component="h2">Designer</Text>) : (<span />)}
                             </TextContent>
                         </FlexItem>
                         <FlexItem>
@@ -121,18 +122,20 @@ export class DesignerPage extends React.Component<Props, State> {
                                     <ToolbarItem>
                                         <ToggleGroup>
                                             <ToggleGroupItem text="Design" buttonId="design" isSelected={mode === "design"}
-                                                             onChange={s => this.setState({mode: "design"})} />
+                                                onChange={s => this.setState({ mode: "design" })} />
                                             <ToggleGroupItem text="Code" buttonId="code" isSelected={mode === "code"}
-                                                             onChange={s => this.setState({mode: "code"})} />
+                                                onChange={s => this.setState({ mode: "code" })} />
                                         </ToggleGroup>
                                     </ToolbarItem>
-                                    <ToolbarItem>
+                                    {EmbeddedDesigner.isEnabled() == false ? (<ToolbarItem>
                                         <Tooltip content="Download YAML" position={"bottom"}>
-                                            <Button variant="primary" icon={<DownloadIcon/>} onClick={e => this.download()}>
+                                            <Button variant="primary" icon={<DownloadIcon />} onClick={e => this.download()}>
                                                 YAML
                                             </Button>
                                         </Tooltip>
-                                    </ToolbarItem>
+                                    </ToolbarItem>) : (<span />)}
+
+
                                     {/* <ToolbarItem>
                                         <Tooltip content="Download image" position={"bottom"}>
                                             <Button variant="secondary" icon={<DownloadImageIcon/>} onClick={e => this.downloadImage()}>
@@ -146,7 +149,7 @@ export class DesignerPage extends React.Component<Props, State> {
                     </Flex>
                 </PageSection>
                 {mode === 'design' && this.getDesigner()}
-                {mode === 'code'  && this.getEditor()}
+                {mode === 'code' && this.getEditor()}
             </PageSection>
         );
     }
