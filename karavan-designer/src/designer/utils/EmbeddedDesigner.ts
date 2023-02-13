@@ -21,5 +21,17 @@ export const EmbeddedDesigner = {
         var result = document.getElementById("root")?.dataset.coresystemsurl;
 
         return result;
+    },
+
+    disableApi: (): boolean => {
+        var result = document.getElementById("root")?.dataset.disableapi ?? "";
+
+        return result.toLocaleLowerCase() == "true";
+    },
+
+    apiFirst: (): boolean => {
+        var result = document.getElementById("root")?.dataset.apifirst ?? "";
+
+        return result.toLocaleLowerCase() == "true";
     }
 }

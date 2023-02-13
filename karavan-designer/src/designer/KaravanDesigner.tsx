@@ -20,14 +20,15 @@ import {
     PageSection, PageSectionVariants, Tab, Tabs, TabTitleIcon, TabTitleText, Tooltip,
 } from '@patternfly/react-core';
 import './karavan.css';
-import {RouteDesigner} from "./route/RouteDesigner";
-import {CamelDefinitionYaml} from "karavan-core/lib/api/CamelDefinitionYaml";
-import {Integration} from "karavan-core/lib/model/IntegrationDefinition";
-import {CamelUtil} from "karavan-core/lib/api/CamelUtil";
-import {CamelUi} from "./utils/CamelUi";
-import {BeansDesigner} from "./beans/BeansDesigner";
-import {RestDesigner} from "./rest/RestDesigner";
-import {getDesignerIcon} from "./utils/KaravanIcons";
+import { RouteDesigner } from "./route/RouteDesigner";
+import { CamelDefinitionYaml } from "karavan-core/lib/api/CamelDefinitionYaml";
+import { Integration } from "karavan-core/lib/model/IntegrationDefinition";
+import { CamelUtil } from "karavan-core/lib/api/CamelUtil";
+import { CamelUi } from "./utils/CamelUi";
+import { BeansDesigner } from "./beans/BeansDesigner";
+import { RestDesigner } from "./rest/RestDesigner";
+import { getDesignerIcon } from "./utils/KaravanIcons";
+import { EmbeddedDesigner } from "./utils/EmbeddedDesigner";
 
 interface Props {
     onSave: (filename: string, yaml: string, propertyOnly: boolean) => void
@@ -49,7 +50,7 @@ interface State {
 export class KaravanInstance {
     static designer: KaravanDesigner;
 
-    static set(designer: KaravanDesigner): void  {
+    static set(designer: KaravanDesigner): void {
         KaravanInstance.designer = designer;
     }
 
@@ -65,15 +66,15 @@ export class KaravanInstance {
 export class KaravanDesigner extends React.Component<Props, State> {
 
     getIntegration = (yaml: string, filename: string): Integration => {
-       if (yaml && CamelDefinitionYaml.yamlIsIntegration(yaml)) {
-           return CamelDefinitionYaml.yamlToIntegration(this.props.filename, this.props.yaml)
-       } else {
-           return Integration.createNew(filename, 'plain');
-       }
+        if (yaml && CamelDefinitionYaml.yamlIsIntegration(yaml)) {
+            return CamelDefinitionYaml.yamlToIntegration(this.props.filename, this.props.yaml)
+        } else {
+            return Integration.createNew(filename, 'plain');
+        }
     }
 
     public state: State = {
-        tab: this.props.tab ? this.props.tab : 'routes',
+        tab: this.props.tab ? this.props.tab : EmbeddedDesigner.apiFirst() == true ? "rest" : 'routes',
         integration: this.getIntegration(this.props.yaml, this.props.filename),
         key: "",
         propertyOnly: false,
@@ -90,7 +91,7 @@ export class KaravanDesigner extends React.Component<Props, State> {
     }
 
     save = (integration: Integration, propertyOnly: boolean): void => {
-        this.setState({key: Math.random().toString(), integration: integration, propertyOnly: propertyOnly});
+        this.setState({ key: Math.random().toString(), integration: integration, propertyOnly: propertyOnly });
     }
 
     getCode = (integration: Integration): string => {
@@ -104,7 +105,7 @@ export class KaravanDesigner extends React.Component<Props, State> {
         const showCount = count && count > 0;
         return (
             <Tooltip position={"bottom"}
-                     content={<div>{tooltip}</div>}>
+                content={<div>{tooltip}</div>}>
                 <div className="top-menu-item">
                     <TabTitleIcon>{getDesignerIcon(icon)}</TabTitleIcon>
                     <TabTitleText>{title}</TabTitleText>
@@ -117,22 +118,38 @@ export class KaravanDesigner extends React.Component<Props, State> {
 
     render() {
         const tab = this.state.tab;
+        const apiFirst = EmbeddedDesigner.apiFirst();
+        const disableApi = EmbeddedDesigner.disableApi();
+
         return (
-            <PageSection variant={this.props.dark ? PageSectionVariants.darker : PageSectionVariants.light} className="page" isFilled padding={{default: 'noPadding'}}>
-                <Tabs className="main-tabs" activeKey={tab} onSelect={(event, tabIndex) => this.setState({tab: tabIndex.toString()})} style={{width: "100%"}}>
-                    <Tab eventKey='routes' title={this.getTab("Routes", "Integration flows", "routes")}></Tab>
-                    {/* <Tab eventKey='rest' title={this.getTab("REST", "REST services", "rest")}></Tab>
-                    <Tab eventKey='beans' title={this.getTab("Beans", "Beans Configuration", "beans")}></Tab> */}
+            <PageSection variant={this.props.dark ? PageSectionVariants.darker : PageSectionVariants.light} className="page" isFilled padding={{ default: 'noPadding' }}>
+                <Tabs className="main-tabs" activeKey={tab} onSelect={(event, tabIndex) => this.setState({ tab: tabIndex.toString() })} style={{ width: "100%" }}>
+                    {apiFirst && disableApi == false &&
+                        (<>
+                            <Tab eventKey='rest' title={this.getTab("REST", "REST services", "rest")}></Tab>
+                            <Tab eventKey='routes' title={this.getTab("Routes", "Integration flows", "routes")}></Tab>
+                        </>)
+                    }
+                    {apiFirst == false && disableApi == false &&
+                        (<>
+                            <Tab eventKey='routes' title={this.getTab("Routes", "Integration flows", "routes")}></Tab>
+                            <Tab eventKey='rest' title={this.getTab("REST", "REST services", "rest")}></Tab>
+                        </>)
+                    }
+                    {disableApi ?
+                        <Tab eventKey='routes' title={this.getTab("Routes", "Integration flows", "routes")}></Tab>
+                        : <span />}
+
                 </Tabs>
-                    {tab === 'routes' && <RouteDesigner integration={this.state.integration}
-                                                        onSave={(integration, propertyOnly) => this.save(integration, propertyOnly)}
-                                                        dark={this.props.dark}/>}
-                    {tab === 'rest' && <RestDesigner integration={this.state.integration}
-                                                     onSave={(integration, propertyOnly) => this.save(integration, propertyOnly)}
-                                                     dark={this.props.dark}/>}
-                    {tab === 'beans' && <BeansDesigner integration={this.state.integration}
-                                                       onSave={(integration, propertyOnly) => this.save(integration, propertyOnly)}
-                                                       dark={this.props.dark}/>}
+                {tab === 'routes' && <RouteDesigner integration={this.state.integration}
+                    onSave={(integration, propertyOnly) => this.save(integration, propertyOnly)}
+                    dark={this.props.dark} />}
+                {tab === 'rest' && <RestDesigner integration={this.state.integration}
+                    onSave={(integration, propertyOnly) => this.save(integration, propertyOnly)}
+                    dark={this.props.dark} />}
+                {tab === 'beans' && <BeansDesigner integration={this.state.integration}
+                    onSave={(integration, propertyOnly) => this.save(integration, propertyOnly)}
+                    dark={this.props.dark} />}
             </PageSection>
         )
     }
