@@ -37,8 +37,8 @@
     "dagre": "^0.8.5",
     "html-to-image": "^1.10.8",
     "karavan-core": "file:../karavan-core",
-    "react": "17.0.2",
-    "react-dom": "17.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-router-dom": "^6.2.1",
     "react-scripts": "5.0.0",
     "rxjs": "^7.5.2",
@@ -47,8 +47,8 @@
   },
   "devDependencies": {
     "@types/dagre": "^0.7.47",
-    "@types/react": "^17.0.38",
-    "@types/react-dom": "^17.0.11",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
     "@types/react-router-dom": "^5.3.3",
     "monaco-editor": "0.29.1"
   }

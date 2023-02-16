@@ -134,22 +134,28 @@ class App extends React.Component<Props, State> {
             data[0].split("\n---\n").map(c => c.trim()).forEach(z => kamelets.push(z));
             KameletApi.saveKamelets(kamelets, true);
 
+            console.log("kamelets saved");
+
             const components: [] = JSON.parse(data[1]);
             const jsons: string[] = [];
             components.forEach(c => jsons.push(JSON.stringify(c)));
             ComponentApi.saveComponents(jsons, true);
+
+            console.log("components saved");
 
             TemplateApi.saveTemplate("org.apache.camel.AggregationStrategy", data[2]);
             TemplateApi.saveTemplate("org.apache.camel.Processor", data[3]);
 
             if (data[4] != null) {
                 this.save(integrationName, data[4], false);
+                console.log("things saved");
             }
 
             const coresystems: [] = JSON.parse(data[5]);
             const corejsons: string[] = [];
             coresystems.forEach(c => corejsons.push(JSON.stringify(c)));
             CoreSystemsApi.saveCoreSystems(corejsons, true);
+            console.log("core systems saved");
 
             if (EmbeddedDesigner.isEnabled() == false) {
                 this.toast("Success", "Loaded " + jsons.length + " components", 'success');
@@ -162,7 +168,10 @@ class App extends React.Component<Props, State> {
         })
             .then(() => {
             }).catch(err =>
-                this.toast("Error", err.text, 'danger')
+                {
+                    console.log(err);
+                    this.toast("Error", err.text, 'danger');
+                }
             );
     }
 
@@ -257,7 +266,7 @@ class App extends React.Component<Props, State> {
                 <>
                     <Flex direction={{ default: "row" }} style={{ width: "100%", height: "100%" }}
                         alignItems={{ default: "alignItemsStretch" }} spaceItems={{ default: 'spaceItemsNone' }}>
-                        {simple == false? (<FlexItem>
+                        {simple == false ? (<FlexItem>
                             {this.pageNav()}
                         </FlexItem>
                         ) : (<div />)}
